@@ -14,4 +14,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: make
-      run: make secret_santa
+      run: make secret_santa/CMakeLists.txt
