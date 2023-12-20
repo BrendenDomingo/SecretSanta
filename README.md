@@ -1,2 +1,2 @@
 # SecretSanta
-Python application used for hosting secret Santa events. Using PyQt for GUI
+Qt application used for hosting secret Santa events.
