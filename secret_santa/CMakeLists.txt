@@ -15,6 +15,10 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
+        secret_santa_participant.cpp
+        secret_santa_participant.h
+        participant_manager.cpp
+        participant_manager.h
         mainwindow.h
         mainwindow.ui
 )
