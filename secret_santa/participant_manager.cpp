@@ -2,6 +2,7 @@
 
 #include "participant_manager.h"
 #include <algorithm>
+#include <ctime>
 
 // Function to add a participant
 void ParticipantManager::addParticipant(const SecretSantaParticipant& participant) {

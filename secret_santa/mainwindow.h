@@ -42,6 +42,8 @@ private slots:
 
     void on_add_exclude_button_clicked();
 
+    void on_secret_santa_button_clicked();
+
 private:
     Ui::MainWindow *ui;
 };
