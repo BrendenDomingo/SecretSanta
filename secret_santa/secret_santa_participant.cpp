@@ -1,23 +1,30 @@
 // SecretSantaParticipant.cpp
 
 #include "secret_santa_participant.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <ostream>
 
-// Constructors
-SecretSantaParticipant::SecretSantaParticipant(const std::string& name, const std::string& address, const std::string& interests)
+// ---------- Constructors ----------
+
+// Full constructor
+SecretSantaParticipant::SecretSantaParticipant(const std::string& name,
+                                               const std::string& address,
+                                               const std::string& interests)
     : name(name), address(address), interests(interests), assignedParticipant(nullptr) {}
 
+// Name-only constructor
 SecretSantaParticipant::SecretSantaParticipant(const std::string& name)
     : name(name), assignedParticipant(nullptr) {}
 
+// Default constructor
 SecretSantaParticipant::SecretSantaParticipant()
     : assignedParticipant(nullptr) {}
 
-// Member functions to access private members
+// ---------- Getters ----------
+
 std::string SecretSantaParticipant::getName() const {
     return name;
 }
@@ -34,54 +41,62 @@ SecretSantaParticipant* SecretSantaParticipant::getAssignedParticipant() const {
     return assignedParticipant;
 }
 
-std::vector<SecretSantaParticipant *> SecretSantaParticipant::getCannotBeAssignedTo() const {
+std::vector<SecretSantaParticipant*> SecretSantaParticipant::getCannotBeAssignedTo() const {
     return cannotBeAssignedTo;
 }
 
+// ---------- Setters ----------
+
 void SecretSantaParticipant::setName(std::string nameString) {
-    name = nameString;
+    name = std::move(nameString);
 }
 
 void SecretSantaParticipant::setAddress(std::string addressString) {
-    address = addressString;
+    address = std::move(addressString);
 }
 
 void SecretSantaParticipant::setInterests(std::string interestsString) {
-    interests = interestsString;
+    interests = std::move(interestsString);
 }
 
-// Assign a participant to the current participant
+// ---------- Assignment Handling ----------
+
+// Assign another participant to this one (as their gift recipient)
 void SecretSantaParticipant::assignParticipant(SecretSantaParticipant* participant) {
     assignedParticipant = participant;
 }
 
-// Add a participant to the list of those they cannot be assigned to
+// Add a participant to the exclusion list
 void SecretSantaParticipant::addCannotBeAssignedTo(SecretSantaParticipant* participant) {
-    if (participant && std::find(cannotBeAssignedTo.begin(), cannotBeAssignedTo.end(), participant) == cannotBeAssignedTo.end()) {
+    if (participant &&
+        std::find(cannotBeAssignedTo.begin(), cannotBeAssignedTo.end(), participant) == cannotBeAssignedTo.end()) {
         cannotBeAssignedTo.push_back(participant);
     }
 }
 
-void SecretSantaParticipant::clearCannotBeAssignedTo()
-{
+// Clear the exclusion list
+void SecretSantaParticipant::clearCannotBeAssignedTo() {
     cannotBeAssignedTo.clear();
 }
 
-void SecretSantaParticipant::writeAssignmentToFile(const std::string &directoryPath)
-{
+// ---------- Output & Debugging ----------
+
+// Write assignment details to a file in the given directory
+void SecretSantaParticipant::writeAssignmentToFile(const std::string& directoryPath) {
     if (!assignedParticipant) {
         std::cerr << "No assigned participant for " << name << std::endl;
         return;
     }
 
-    // Sanitize file name
+    // Create a safe filename
     std::string sanitizedName = name;
     std::replace(sanitizedName.begin(), sanitizedName.end(), ' ', '_');
     std::string filename = sanitizedName + "_SecretSanta.txt";
 
-    // Build full path
+    // Construct full file path
     std::filesystem::path fullPath = std::filesystem::path(directoryPath) / filename;
 
+    // Open and write the file
     std::ofstream outFile(fullPath);
     if (!outFile) {
         std::cerr << "Failed to open file: " << fullPath << std::endl;
@@ -98,15 +113,17 @@ void SecretSantaParticipant::writeAssignmentToFile(const std::string &directoryP
     outFile.close();
 }
 
-// Display participant information
+// Print participant info to console
 void SecretSantaParticipant::displayInformation() const {
     std::cout << "Name: " << name << std::endl;
     std::cout << "Address: " << address << std::endl;
     std::cout << "Interests: " << interests << std::endl;
-    if(assignedParticipant != nullptr) {
+
+    if (assignedParticipant != nullptr) {
         std::cout << "Assigned Participant: " << assignedParticipant->getName() << std::endl;
     } else {
         std::cout << "Assigned Participant: Not assigned yet" << std::endl;
     }
+
     std::cout << "-----------------------" << std::endl;
 }

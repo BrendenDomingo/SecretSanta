@@ -10,49 +10,42 @@
 #include <QStandardPaths>
 #include <QDir>
 
+// Constructor: Initializes UI and attempts to load previous session
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow) {
+    : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
     manager = new ParticipantManager();
-
     loadSession();
 }
 
+// Destructor: Saves session and cleans up resources
 MainWindow::~MainWindow() {
     saveSession();
-
     delete manager;
     delete ui;
 }
 
+// Add a new participant with a default name
 void MainWindow::on_add_participant_button_clicked() {
     QString baseName = "New Participant";
     int participantCount = ui->participant_list->count();
-    QString newName = baseName;
-
-    if (participantCount > 0) {
-        newName = QString("New Participant%1").arg(participantCount);
-    }
+    QString newName = (participantCount > 0) ? baseName + QString::number(participantCount) : baseName;
 
     SecretSantaParticipant participant;
     participant.setName(newName.toStdString());
 
-    // Add to manager and UI
     manager->addParticipant(participant);
     ui->participant_list->addItem(newName);
 }
 
+// Clear all participants and UI
 void MainWindow::on_clear_participant_button_clicked() {
-    // Remove all participants from the participant manager
     manager->removeAll();
 
-    // Clear UI elements
-    ui->name_edit->setText("");
-    ui->Adderss_edit->setText("");
-    ui->ideas_edit->setText("");
+    ui->name_edit->clear();
+    ui->Adderss_edit->clear();
+    ui->ideas_edit->clear();
     ui->exclude_list->clear();
-
     ui->participant_list->clear();
     ui->exclude_comboBox->clear();
 
@@ -60,83 +53,71 @@ void MainWindow::on_clear_participant_button_clicked() {
     selectedItem = nullptr;
 }
 
-
+// Handle participant selection in UI
 void MainWindow::on_participant_list_itemClicked(QListWidgetItem *item) {
-    int participantCount = ui->participant_list->count();
-
-    // Get the selected participant
     QString name = item->text();
     selectedParticipant = manager->getParticipant(name.toStdString());
     selectedItem = item;
 
-    // Set the UI elements for the selected participant
+    if (!selectedParticipant) return;
+
     ui->name_edit->setText(QString::fromStdString(selectedParticipant->getName()));
     ui->Adderss_edit->setText(QString::fromStdString(selectedParticipant->getAddress()));
     ui->ideas_edit->setText(QString::fromStdString(selectedParticipant->getInterests()));
 
     ui->exclude_list->clear();
-    for(auto &excluded : selectedParticipant->getCannotBeAssignedTo()) {
+    for (auto &excluded : selectedParticipant->getCannotBeAssignedTo()) {
         ui->exclude_list->addItem(QString::fromStdString(excluded->getName()));
     }
 
-    // Populate the exclude combo box with valid participants to exclude
     ui->exclude_comboBox->clear();
-    for(int i = 0; i < participantCount; i++) {
+    for (int i = 0; i < ui->participant_list->count(); i++) {
         ui->exclude_comboBox->addItem(ui->participant_list->item(i)->text());
     }
 }
 
-
+// Update participant name
 void MainWindow::on_name_edit_textChanged(const QString &arg1) {
     if (selectedParticipant && selectedItem) {
         selectedParticipant->setName(arg1.toStdString());
-        selectedItem->setText(QString::fromStdString(selectedParticipant->getName()));
+        selectedItem->setText(arg1);
     }
 }
 
-
-void MainWindow::on_Adderss_edit_textChanged() { 
-    if (selectedParticipant && selectedItem) {
+// Update participant address
+void MainWindow::on_Adderss_edit_textChanged() {
+    if (selectedParticipant) {
         selectedParticipant->setAddress(ui->Adderss_edit->toPlainText().toStdString());
-        selectedItem->setText(QString::fromStdString(selectedParticipant->getName()));
     }
 }
 
-
+// Update participant interests
 void MainWindow::on_ideas_edit_textChanged() {
-    if (selectedParticipant && selectedItem) {
+    if (selectedParticipant) {
         selectedParticipant->setInterests(ui->ideas_edit->toPlainText().toStdString());
-        selectedItem->setText(QString::fromStdString(selectedParticipant->getName()));
     }
 }
 
-
+// Add an exclusion for the selected participant
 void MainWindow::on_add_exclude_button_clicked() {
-    // Get pointer to the excluded participant
     SecretSantaParticipant* excludedParticipant = manager->getParticipant(ui->exclude_comboBox->currentText().toStdString());
 
-    // Protect against null pointers and self-exclusion
     if (!excludedParticipant || excludedParticipant == selectedParticipant) return;
 
-    // Prevent duplicates
     for (auto& existing : selectedParticipant->getCannotBeAssignedTo()) {
-        if (existing == excludedParticipant)
-            return; // Already excluded
+        if (existing == excludedParticipant) return;
     }
 
     selectedParticipant->addCannotBeAssignedTo(excludedParticipant);
 
-    // Refresh the exclude list in UI
     ui->exclude_list->clear();
-    for(auto& excluded : selectedParticipant->getCannotBeAssignedTo()) {
+    for (auto& excluded : selectedParticipant->getCannotBeAssignedTo()) {
         ui->exclude_list->addItem(QString::fromStdString(excluded->getName()));
     }
 }
 
-
-void MainWindow::on_secret_santa_button_clicked()
-{
-    // Check participants for missing info
+// Execute Secret Santa logic and write results
+void MainWindow::on_secret_santa_button_clicked() {
     std::ostringstream warningStream;
     bool missingInfo = false;
 
@@ -153,35 +134,21 @@ void MainWindow::on_secret_santa_button_clicked()
 
     if (missingInfo) {
         int ret = QMessageBox::warning(
-            this,
-            "Missing Participant Info",
-            QString("Some participants are missing important information:\n\n%1\n\nDo you want to continue?")
-                .arg(QString::fromStdString(warningStream.str())),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No
-            );
-
-        if (ret == QMessageBox::No) {
-            // User chose not to continue
-            return;
-        }
+            this, "Missing Participant Info",
+            QString("Some participants are missing important information:\n\n%1\n\nDo you want to continue?").arg(QString::fromStdString(warningStream.str())),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (ret == QMessageBox::No) return;
     }
 
-    // Validate exclusions
     std::string reason;
     if (!manager->validateExclusions(reason)) {
-        QMessageBox::critical(this, "Invalid Exclusion Configuration",
-                              QString::fromStdString(reason));
+        QMessageBox::critical(this, "Invalid Exclusion Configuration", QString::fromStdString(reason));
         return;
     }
 
     try {
         manager->randomlyAssignParticipants();
-
-        // Prompt user to select a directory
         QString selectedDir = QFileDialog::getExistingDirectory(this, "Select Directory to Save Assignments");
-
-        // If user cancels the dialog, don't proceed
         if (selectedDir.isEmpty()) {
             QMessageBox::information(this, "Cancelled", "No directory selected. Operation cancelled.");
             return;
@@ -192,145 +159,94 @@ void MainWindow::on_secret_santa_button_clicked()
         }
 
         QMessageBox::information(this, "Success", "Secret Santa assignments saved successfully.");
-    }
-    catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error& e) {
         QMessageBox::critical(this, "Assignment Error", e.what());
-    }
-    catch (...) {
+    } catch (...) {
         QMessageBox::critical(this, "Assignment Error", "An unknown error occurred during assignment.");
     }
 }
 
-
-void MainWindow::on_clear_exclude_button_clicked()
-{
+// Clear exclusions for selected participant
+void MainWindow::on_clear_exclude_button_clicked() {
     if (!selectedParticipant) return;
-
-    // Manually clear the exclusion list
     selectedParticipant->clearCannotBeAssignedTo();
-
-    // Update the UI
     ui->exclude_list->clear();
 }
 
-
-void MainWindow::on_actionNew_triggered()
-{
-    // Clear all participants from the manager
-    manager->removeAll();
-
-    // Clear UI elements
-    ui->name_edit->setText("");
-    ui->Adderss_edit->setText("");
-    ui->ideas_edit->setText("");
-    ui->exclude_list->clear();
-
-    ui->participant_list->clear();
-    ui->exclude_comboBox->clear();
-
-    selectedParticipant = nullptr;
-    selectedItem = nullptr;
+// File -> New menu action
+void MainWindow::on_actionNew_triggered() {
+    on_clear_participant_button_clicked();
 }
 
-
-void MainWindow::on_actionSave_triggered()
-{
-    QString fileName = QFileDialog::getSaveFileName(
-        this,
-        "Save Participant Data",
-        "",
-        "Secret Santa Files (*.json);;All Files (*)"
-        );
-
+// File -> Save menu action
+void MainWindow::on_actionSave_triggered() {
+    QString fileName = QFileDialog::getSaveFileName(this, "Save Participant Data", "", "Secret Santa Files (*.json);;All Files (*)");
     if (fileName.isEmpty()) return;
 
     QJsonArray participantsArray;
-
     for (const auto& participant : manager->getAllParticipants()) {
-        QJsonObject participantObject;
-        participantObject["name"] = QString::fromStdString(participant.getName());
-        participantObject["address"] = QString::fromStdString(participant.getAddress());
-        participantObject["interests"] = QString::fromStdString(participant.getInterests());
+        QJsonObject obj;
+        obj["name"] = QString::fromStdString(participant.getName());
+        obj["address"] = QString::fromStdString(participant.getAddress());
+        obj["interests"] = QString::fromStdString(participant.getInterests());
 
         QJsonArray excludedArray;
-        for (const auto* excluded : participant.getCannotBeAssignedTo()) {
+        for (auto* excluded : participant.getCannotBeAssignedTo()) {
             excludedArray.append(QString::fromStdString(excluded->getName()));
         }
-        participantObject["excluded"] = excludedArray;
+        obj["excluded"] = excludedArray;
 
-        // Optional: assigned participant (if exists)
         if (participant.getAssignedParticipant()) {
-            participantObject["assigned"] = QString::fromStdString(participant.getAssignedParticipant()->getName());
+            obj["assigned"] = QString::fromStdString(participant.getAssignedParticipant()->getName());
         }
 
-        participantsArray.append(participantObject);
+        participantsArray.append(obj);
     }
 
+    QJsonDocument doc;
     QJsonObject root;
     root["participants"] = participantsArray;
+    doc.setObject(root);
 
-    QJsonDocument saveDoc(root);
-
-    QFile saveFile(fileName);
-    if (!saveFile.open(QIODevice::WriteOnly)) {
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly)) {
         QMessageBox::critical(this, "Error", "Unable to open file for writing.");
         return;
     }
-
-    saveFile.write(saveDoc.toJson());
-    saveFile.close();
+    file.write(doc.toJson());
+    file.close();
 
     QMessageBox::information(this, "Saved", "Participant data saved successfully.");
 }
 
-
-void MainWindow::on_actionOpen_triggered()
-{
-    QString fileName = QFileDialog::getOpenFileName(
-        this,
-        "Open Participant Data",
-        "",
-        "Secret Santa Files (*.json);;All Files (*)"
-        );
-
+// File -> Open menu action
+void MainWindow::on_actionOpen_triggered() {
+    QString fileName = QFileDialog::getOpenFileName(this, "Open Participant Data", "", "Secret Santa Files (*.json);;All Files (*)");
     if (fileName.isEmpty()) return;
 
-    QFile loadFile(fileName);
-    if (!loadFile.open(QIODevice::ReadOnly)) {
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(this, "Error", "Unable to open file for reading.");
         return;
     }
+    QByteArray data = file.readAll();
+    file.close();
 
-    QByteArray fileData = loadFile.readAll();
-    loadFile.close();
-
-    QJsonParseError parseError;
-    QJsonDocument loadDoc = QJsonDocument::fromJson(fileData, &parseError);
-    if (parseError.error != QJsonParseError::NoError) {
-        QMessageBox::critical(this, "Parse Error", "Failed to parse the file:\n" + parseError.errorString());
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &err);
+    if (err.error != QJsonParseError::NoError) {
+        QMessageBox::critical(this, "Parse Error", err.errorString());
         return;
     }
 
-    // Clear current data
-    manager->removeAll();
-    ui->participant_list->clear();
-    ui->name_edit->clear();
-    ui->Adderss_edit->clear();
-    ui->ideas_edit->clear();
-    ui->exclude_list->clear();
-    ui->exclude_comboBox->clear();
-    selectedParticipant = nullptr;
-    selectedItem = nullptr;
+    on_clear_participant_button_clicked();
 
-    QJsonObject root = loadDoc.object();
-    QJsonArray participantsArray = root["participants"].toArray();
+    QJsonObject root = doc.object();
+    QJsonArray arr = root["participants"].toArray();
 
-    // Temporary map to resolve references after all are created
-    std::unordered_map<std::string, SecretSantaParticipant*> nameToParticipant;
-
-    // 1. Create participants without exclusions/assignments first
-    for (int i = 0; i < participantsArray.size(); ++i) {
-        QJsonObject obj = participantsArray[i].toObject();
+    std::unordered_map<std::string, SecretSantaParticipant*> nameMap;
+    for (const auto& val : arr) {
+        QJsonObject obj = val.toObject();
         SecretSantaParticipant p(
             obj["name"].toString().toStdString(),
             obj["address"].toString().toStdString(),
@@ -339,63 +255,51 @@ void MainWindow::on_actionOpen_triggered()
         manager->addParticipant(p);
     }
 
-    // Build name-to-pointer map
     for (auto& p : manager->getAllParticipants()) {
-        nameToParticipant[p.getName()] = &p;
+        nameMap[p.getName()] = &p;
+        ui->participant_list->addItem(QString::fromStdString(p.getName()));
     }
 
-    // 2. Now resolve exclusions and assignments
-    int index = 0;
-    for (int i = 0; i < participantsArray.size(); ++i) {
-        QJsonObject obj = participantsArray[i].toObject();
+    for (const auto& val : arr) {
+        QJsonObject obj = val.toObject();
         std::string name = obj["name"].toString().toStdString();
-        SecretSantaParticipant* p = nameToParticipant[name];
+        auto* p = nameMap[name];
 
-        // Excluded participants
-        QJsonArray excludedArray = obj["excluded"].toArray();
-        for (int j = 0; j < excludedArray.size(); ++j) {
-            std::string exName = excludedArray[j].toString().toStdString();
-            if (nameToParticipant.count(exName)) {
-                p->addCannotBeAssignedTo(nameToParticipant[exName]);
-            }
+        QJsonArray exclusions = obj["excluded"].toArray();
+        for (const auto& ex : exclusions) {
+            std::string exName = ex.toString().toStdString();
+            if (nameMap.count(exName)) p->addCannotBeAssignedTo(nameMap[exName]);
         }
 
-        // Assigned participant (optional)
         if (obj.contains("assigned")) {
-            std::string assignedName = obj["assigned"].toString().toStdString();
-            if (nameToParticipant.count(assignedName)) {
-                p->assignParticipant(nameToParticipant[assignedName]);
-            }
+            std::string assignName = obj["assigned"].toString().toStdString();
+            if (nameMap.count(assignName)) p->assignParticipant(nameMap[assignName]);
         }
-
-        // Add to UI
-        ui->participant_list->addItem(QString::fromStdString(p->getName()));
-        ++index;
     }
 
     QMessageBox::information(this, "Loaded", "Participant data loaded successfully.");
 }
 
-void MainWindow::saveSession()
-{
-    QJsonArray participantArray;
+// Save temporary session to disk
+void MainWindow::saveSession() {
+    QJsonArray array;
 
-    for (const auto& participant : manager->getAllParticipants()) {
-        QJsonObject pObj;
-        pObj["name"] = QString::fromStdString(participant.getName());
-        pObj["address"] = QString::fromStdString(participant.getAddress());
-        pObj["interests"] = QString::fromStdString(participant.getInterests());
+    for (const auto& p : manager->getAllParticipants()) {
+        QJsonObject obj;
+        obj["name"] = QString::fromStdString(p.getName());
+        obj["address"] = QString::fromStdString(p.getAddress());
+        obj["interests"] = QString::fromStdString(p.getInterests());
 
-        QJsonArray excludeArray;
-        for (auto* excluded : participant.getCannotBeAssignedTo()) {
-            excludeArray.append(QString::fromStdString(excluded->getName()));
+        QJsonArray ex;
+        for (auto* exP : p.getCannotBeAssignedTo()) {
+            ex.append(QString::fromStdString(exP->getName()));
         }
-        pObj["exclusions"] = excludeArray;
+        obj["exclusions"] = ex;
 
-        participantArray.append(pObj);
+        array.append(obj);
     }
 
-    QJsonDocument doc(participantArray);
+    QJsonDocument doc(array);
 
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir().mkpath(path);
@@ -406,25 +310,23 @@ void MainWindow::saveSession()
     }
 }
 
-void MainWindow::loadSession()
-{
+// Load temporary session from disk
+void MainWindow::loadSession() {
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/session.json";
     QFile file(path);
-
     if (!file.exists() || !file.open(QIODevice::ReadOnly)) return;
 
     QByteArray data = file.readAll();
-    QJsonDocument doc = QJsonDocument::fromJson(data);
     file.close();
 
+    QJsonDocument doc = QJsonDocument::fromJson(data);
     if (!doc.isArray()) return;
 
     QJsonArray array = doc.array();
     manager->removeAll();
     ui->participant_list->clear();
 
-    // First pass: Add all participants
-    for (const QJsonValue& val : array) {
+    for (const auto& val : array) {
         QJsonObject obj = val.toObject();
         SecretSantaParticipant p;
         p.setName(obj["name"].toString().toStdString());
@@ -434,26 +336,19 @@ void MainWindow::loadSession()
         ui->participant_list->addItem(QString::fromStdString(p.getName()));
     }
 
-    // Build a quick lookup table
-    std::unordered_map<std::string, SecretSantaParticipant*> nameMap;
-    for (const auto& p : manager->getAllParticipants()) {
-        nameMap[p.getName()] = manager->getParticipant(p.getName());
+    std::unordered_map<std::string, SecretSantaParticipant*> map;
+    for (auto& p : manager->getAllParticipants()) {
+        map[p.getName()] = &p;
     }
 
-    // Second pass: Add exclusions
-    for (const QJsonValue& val : array) {
+    for (const auto& val : array) {
         QJsonObject obj = val.toObject();
-        std::string pName = obj["name"].toString().toStdString();
-        auto* p = manager->getParticipant(pName);
-        if (!p) continue;
-
-        QJsonArray exclusions = obj["exclusions"].toArray();
-        for (const QJsonValue& exVal : exclusions) {
-            std::string exName = exVal.toString().toStdString();
-            if (exName != pName && nameMap.count(exName)) {
-                p->addCannotBeAssignedTo(nameMap[exName]);
+        auto* p = map[obj["name"].toString().toStdString()];
+        for (const auto& ex : obj["exclusions"].toArray()) {
+            std::string exName = ex.toString().toStdString();
+            if (map.count(exName)) {
+                p->addCannotBeAssignedTo(map[exName]);
             }
         }
     }
 }
-
