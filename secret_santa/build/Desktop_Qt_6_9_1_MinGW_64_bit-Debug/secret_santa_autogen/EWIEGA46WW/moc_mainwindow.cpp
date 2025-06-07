@@ -50,7 +50,13 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         "on_Adderss_edit_textChanged",
         "on_ideas_edit_textChanged",
         "on_add_exclude_button_clicked",
-        "on_secret_santa_button_clicked"
+        "on_secret_santa_button_clicked",
+        "on_clear_exclude_button_clicked",
+        "on_actionNew_triggered",
+        "on_actionSave_triggered",
+        "on_actionOpen_triggered",
+        "saveSession",
+        "loadSession"
     };
 
     QtMocHelpers::UintData qt_methods {
@@ -74,6 +80,18 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
         QtMocHelpers::SlotData<void()>(11, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'on_secret_santa_button_clicked'
         QtMocHelpers::SlotData<void()>(12, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_clear_exclude_button_clicked'
+        QtMocHelpers::SlotData<void()>(13, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_actionNew_triggered'
+        QtMocHelpers::SlotData<void()>(14, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_actionSave_triggered'
+        QtMocHelpers::SlotData<void()>(15, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_actionOpen_triggered'
+        QtMocHelpers::SlotData<void()>(16, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'saveSession'
+        QtMocHelpers::SlotData<void()>(17, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'loadSession'
+        QtMocHelpers::SlotData<void()>(18, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -105,6 +123,12 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 5: _t->on_ideas_edit_textChanged(); break;
         case 6: _t->on_add_exclude_button_clicked(); break;
         case 7: _t->on_secret_santa_button_clicked(); break;
+        case 8: _t->on_clear_exclude_button_clicked(); break;
+        case 9: _t->on_actionNew_triggered(); break;
+        case 10: _t->on_actionSave_triggered(); break;
+        case 11: _t->on_actionOpen_triggered(); break;
+        case 12: _t->saveSession(); break;
+        case 13: _t->loadSession(); break;
         default: ;
         }
     }
@@ -129,14 +153,14 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 8)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 8;
+        _id -= 14;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 8)
+        if (_id < 14)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 8;
+        _id -= 14;
     }
     return _id;
 }

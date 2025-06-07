@@ -25,7 +25,7 @@ public:
     std::string getAddress() const;
     std::string getInterests() const;
     SecretSantaParticipant* getAssignedParticipant() const;
-    std::vector<SecretSantaParticipant*> getCannotBeAssignedTo();
+    std::vector<SecretSantaParticipant*> getCannotBeAssignedTo() const;
 
     void setName(std::string nameString);
     void setAddress(std::string addressString);
@@ -36,6 +36,10 @@ public:
 
     // Add a participant to the list of those they cannot be assigned to
     void addCannotBeAssignedTo(SecretSantaParticipant* participant);
+
+    void clearCannotBeAssignedTo();
+
+    void writeAssignmentToFile(const std::string& directoryPath);
 
     // Display participant information
     void displayInformation() const;

@@ -13,7 +13,7 @@ private:
 public:
     // Constructors
     ParticipantManager() = default;
-    ~ParticipantManager() = default;
+    ~ParticipantManager();
 
     // Function to add a participant
     void addParticipant(const SecretSantaParticipant& participant);
@@ -24,8 +24,13 @@ public:
     // Function to remove all participants
     void removeAll();
 
+    bool validateExclusions(std::string& reason) const;
+
     // Function to get a participant by name
     SecretSantaParticipant* getParticipant(const std::string& name);
+
+    // Returns a reference to the vector of all participants
+    std::vector<SecretSantaParticipant>& getAllParticipants();
 
     // Display information for all participants
     void displayAllParticipants() const;

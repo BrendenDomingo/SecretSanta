@@ -44,6 +44,18 @@ private slots:
 
     void on_secret_santa_button_clicked();
 
+    void on_clear_exclude_button_clicked();
+
+    void on_actionNew_triggered();
+
+    void on_actionSave_triggered();
+
+    void on_actionOpen_triggered();
+
+    void saveSession();
+
+    void loadSession();
+
 private:
     Ui::MainWindow *ui;
 };

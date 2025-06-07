@@ -1,6 +1,9 @@
 // SecretSantaParticipant.cpp
 
 #include "secret_santa_participant.h"
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <ostream>
 
@@ -31,7 +34,7 @@ SecretSantaParticipant* SecretSantaParticipant::getAssignedParticipant() const {
     return assignedParticipant;
 }
 
-std::vector<SecretSantaParticipant *> SecretSantaParticipant::getCannotBeAssignedTo() {
+std::vector<SecretSantaParticipant *> SecretSantaParticipant::getCannotBeAssignedTo() const {
     return cannotBeAssignedTo;
 }
 
@@ -54,7 +57,45 @@ void SecretSantaParticipant::assignParticipant(SecretSantaParticipant* participa
 
 // Add a participant to the list of those they cannot be assigned to
 void SecretSantaParticipant::addCannotBeAssignedTo(SecretSantaParticipant* participant) {
-    cannotBeAssignedTo.push_back(participant);
+    if (participant && std::find(cannotBeAssignedTo.begin(), cannotBeAssignedTo.end(), participant) == cannotBeAssignedTo.end()) {
+        cannotBeAssignedTo.push_back(participant);
+    }
+}
+
+void SecretSantaParticipant::clearCannotBeAssignedTo()
+{
+    cannotBeAssignedTo.clear();
+}
+
+void SecretSantaParticipant::writeAssignmentToFile(const std::string &directoryPath)
+{
+    if (!assignedParticipant) {
+        std::cerr << "No assigned participant for " << name << std::endl;
+        return;
+    }
+
+    // Sanitize file name
+    std::string sanitizedName = name;
+    std::replace(sanitizedName.begin(), sanitizedName.end(), ' ', '_');
+    std::string filename = sanitizedName + "_SecretSanta.txt";
+
+    // Build full path
+    std::filesystem::path fullPath = std::filesystem::path(directoryPath) / filename;
+
+    std::ofstream outFile(fullPath);
+    if (!outFile) {
+        std::cerr << "Failed to open file: " << fullPath << std::endl;
+        return;
+    }
+
+    outFile << "🎁 Secret Santa Assignment 🎁\n\n";
+    outFile << "Dear " << name << ",\n\n";
+    outFile << "You are the Secret Santa for:\n\n";
+    outFile << "Name: " << assignedParticipant->getName() << "\n";
+    outFile << "Address: " << assignedParticipant->getAddress() << "\n";
+    outFile << "Gift Ideas / Interests: " << assignedParticipant->getInterests() << "\n";
+
+    outFile.close();
 }
 
 // Display participant information

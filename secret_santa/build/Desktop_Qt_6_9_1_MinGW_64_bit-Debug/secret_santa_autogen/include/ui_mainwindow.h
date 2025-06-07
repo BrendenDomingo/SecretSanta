@@ -30,6 +30,10 @@ QT_BEGIN_NAMESPACE
 class Ui_MainWindow
 {
 public:
+    QAction *actionNew;
+    QAction *actionOpen;
+    QAction *actionSave;
+    QAction *actionImport;
     QWidget *centralwidget;
     QListWidget *participant_list;
     QPushButton *add_participant_button;
@@ -47,7 +51,6 @@ public:
     QPushButton *clear_exclude_button;
     QLabel *exclude_label;
     QComboBox *exclude_comboBox;
-    QPushButton *browse_exclude_Button;
     QLabel *participant_list_label;
     QMenuBar *menubar;
     QMenu *menuFile;
@@ -60,6 +63,14 @@ public:
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
         MainWindow->resize(756, 561);
+        actionNew = new QAction(MainWindow);
+        actionNew->setObjectName("actionNew");
+        actionOpen = new QAction(MainWindow);
+        actionOpen->setObjectName("actionOpen");
+        actionSave = new QAction(MainWindow);
+        actionSave->setObjectName("actionSave");
+        actionImport = new QAction(MainWindow);
+        actionImport->setObjectName("actionImport");
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName("centralwidget");
         participant_list = new QListWidget(centralwidget);
@@ -109,10 +120,7 @@ public:
         exclude_label->setGeometry(QRect(10, 240, 51, 16));
         exclude_comboBox = new QComboBox(groupBox);
         exclude_comboBox->setObjectName("exclude_comboBox");
-        exclude_comboBox->setGeometry(QRect(100, 460, 211, 24));
-        browse_exclude_Button = new QPushButton(groupBox);
-        browse_exclude_Button->setObjectName("browse_exclude_Button");
-        browse_exclude_Button->setGeometry(QRect(320, 460, 21, 24));
+        exclude_comboBox->setGeometry(QRect(100, 460, 241, 24));
         participant_list_label = new QLabel(centralwidget);
         participant_list_label->setObjectName("participant_list_label");
         participant_list_label->setGeometry(QRect(10, 10, 81, 16));
@@ -134,6 +142,10 @@ public:
         menubar->addAction(menuFile->menuAction());
         menubar->addAction(menuEdit->menuAction());
         menubar->addAction(menuHelp->menuAction());
+        menuFile->addAction(actionNew);
+        menuFile->addAction(actionOpen);
+        menuFile->addAction(actionImport);
+        menuFile->addAction(actionSave);
 
         retranslateUi(MainWindow);
 
@@ -143,6 +155,10 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "MainWindow", nullptr));
+        actionNew->setText(QCoreApplication::translate("MainWindow", "New", nullptr));
+        actionOpen->setText(QCoreApplication::translate("MainWindow", "Open", nullptr));
+        actionSave->setText(QCoreApplication::translate("MainWindow", "Save", nullptr));
+        actionImport->setText(QCoreApplication::translate("MainWindow", "Import", nullptr));
         add_participant_button->setText(QCoreApplication::translate("MainWindow", "Add", nullptr));
         clear_participant_button->setText(QCoreApplication::translate("MainWindow", "Clear", nullptr));
         secret_santa_button->setText(QCoreApplication::translate("MainWindow", "SECRET SANTA! ", nullptr));
@@ -153,7 +169,6 @@ public:
         add_exclude_button->setText(QCoreApplication::translate("MainWindow", "Add", nullptr));
         clear_exclude_button->setText(QCoreApplication::translate("MainWindow", "Clear", nullptr));
         exclude_label->setText(QCoreApplication::translate("MainWindow", "Exclude", nullptr));
-        browse_exclude_Button->setText(QCoreApplication::translate("MainWindow", "...", nullptr));
         participant_list_label->setText(QCoreApplication::translate("MainWindow", "Participant List", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));
         menuEdit->setTitle(QCoreApplication::translate("MainWindow", "Edit", nullptr));
